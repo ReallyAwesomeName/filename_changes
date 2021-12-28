@@ -100,8 +100,61 @@ class filename:
     ]
 
 
+    def __init__(self) -> None:
+        self.id = ''
+        self.subid = ''
+        self.type = ''
+        self.date = ''
+        self.state_code = ''
+        
+        
+    def get_new_name(self, ufile):
+        """change the name of ufile with specific criteria
+
+        Args:
+            ufile (str): name of file to rename
+        """
+        self.new_name = []
+
+        # remove .pdf, add back before return
+        self.ufile_noext = ufile.strip(".pdf")
+        # TODO: check for other delimiters
+        self.ufile_split = self.ufile_noext.split("~")
+
+        for item in self.ufile_split:
+            # check states
+            if item in filename.state_abbreviations:
+                self.new_name.append(item)
+            # check codes
+            if item in codes:
+                self.new_name.append(item)
+
+            # TODO: make sure this is specific enough for all file variations
+                # IT'S NOT, NEED SPECIFIC NUMBERS
+            # check if all digits (dates)
+            if item.isdigit():
+                self.new_name.append(item)
+
+            else:
+                continue
+
+        # join and add back .pdf
+        self.new_name = "_".join(self.new_name)
+        self.new_name = f"{self.new_name}.pdf"
+        return self.new_name
+
+
+    # TODO: make work with CLI or GUI
+    def get_dir(self):
+        """get directory to work on from user. Should use GUI."""
+        # temp value for now
+        return "C:\\Users\\jgeog\\Code\\PythonProjects\\filename_change\\test_dir"
+
+
+
 def main():
-    udir = get_dir()
+    
+    udir = filename.get_dir()
 
     # for each file in the directory
     for ufile in os.listdir(udir):
@@ -109,7 +162,7 @@ def main():
         src = f"{udir}\\{ufile}"
 
         # full path with new filename
-        new_name = change_name(ufile)
+        new_name = filename.get_new_name(ufile)
         dest = f"{udir}\\{new_name}"
 
         os.rename(src, dest)
@@ -119,47 +172,6 @@ def main():
         print(f"new_name = {new_name}")
         print("=" * 15)
 
-
-def change_name(ufile):
-    """change the name of ufile with specific criteria
-
-    Args:
-        ufile (str): name of file to rename
-    """
-    new_name = []
-
-    # remove .pdf, add back before return
-    ufile_noext = ufile.strip(".pdf")
-    # TODO: check for other delimiters
-    ufile_split = ufile_noext.split("~")
-
-    for item in ufile_split:
-        # check states
-        if item in filename.state_abbreviations:
-            new_name.append(item)
-        # check codes
-        if item in codes:
-            new_name.append(item)
-
-        # TODO: make sure this is specific enough for all file variations
-        # check if all digits (dates)
-        if item.isdigit():
-            new_name.append(item)
-
-        else:
-            continue
-
-    # join and add back .pdf
-    new_name = "_".join(new_name)
-    new_name = f"{new_name}.pdf"
-    return new_name
-
-
-# TODO: make work with CLI or GUI
-def get_dir():
-    """get directory to work on from user. Should use GUI."""
-    # temp value for now
-    return "C:\\Users\\jgeog\\Code\\PythonProjects\\filename_change\\test_dir"
 
 
 if __name__ == "__main__":
