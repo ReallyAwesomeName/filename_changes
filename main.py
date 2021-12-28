@@ -1,8 +1,6 @@
-# Clean up verbose filenames - replace with simple ones with only pertinent info
+# clean up verbose filenames - replace with simple ones with only pertinent info
 
 import os
-import shutil
-import tkinter
 
 
 state_abbreviations = [
@@ -58,18 +56,27 @@ state_abbreviations = [
     "WY",
 ]
 
+codes = ["TT", "KB", "FB", "GG"]
+
 
 def main():
     udir = get_dir()
-    for ufile in os.listdir(udir):
-        # copy_dir(udir)
-        src = f"{udir}\\{ufile}"
-        dest = f"{udir}\\{str(change_name(ufile))}"
-        os.rename(src, dest)
-        print(f"udir = {udir}")
-        print(f"ufile = {ufile}")
 
-    pass
+    # for each file in the directory
+    for ufile in os.listdir(udir):
+        # full path with original filename
+        src = f"{udir}\\{ufile}"
+
+        # full path with new filename
+        new_name = change_name(ufile)
+        dest = f"{udir}\\{new_name}"
+
+        os.rename(src, dest)
+
+        # TODO: remove after testing
+        print(f"original = {ufile}")
+        print(f"new_name = {new_name}")
+        print("=" * 15)
 
 
 def change_name(ufile):
@@ -79,37 +86,38 @@ def change_name(ufile):
         ufile (str): name of file to rename
     """
     new_name = []
-    
-    #TODO: Change to .pdf
-    ufile_noext = ufile.translate(str.maketrans("", "", ".txt"))
-    #TODO: Check for other delimiters
+
+    # remove .pdf, add back before return
+    ufile_noext = ufile.strip(".pdf")
+    # TODO: check for other delimiters
     ufile_split = ufile_noext.split("_")
-    
-    for state in state_abbreviations:
-        if state in ufile_split:
-            new_name.append(state)
-        
-        else:  # Temporary for easier testing
+
+    for item in ufile_split:
+        # check states
+        if item in state_abbreviations:
+            new_name.append(item)
+        # check codes
+        if item in codes:
+            new_name.append(item)
+
+        # TODO: make sure this is specific enough for all file variations
+        # check if all digits (dates)
+        if item.isdigit():
+            new_name.append(item)
+
+        else:
             continue
-        
-    #TODO: Change to .pdf
-    new_name.append(".txt")
-    new_name = '_'.join(new_name)
+
+    # join and add back .pdf
+    new_name = "_".join(new_name)
+    new_name = f"{new_name}.pdf"
     return new_name
 
 
-def copy_dir(udir):
-    udir_edit = udir.split("\\")
-    udir_edit.pop()
-    udir_edit = "\\".join(udir_edit)
-    dest = f"{udir_edit}\\backup\\"
-    print(f"udir_edit = {udir_edit} --- dest = {dest}")
-    shutil.copy(udir, dest)
-
-
+# TODO: make work with CLI or GUI
 def get_dir():
     """get directory to work on from user. Should use GUI."""
-    # Temp value for now
+    # temp value for now
     return "C:\\Users\\jgeog\\Code\\PythonProjects\\filename_change\\test_dir"
 
 
