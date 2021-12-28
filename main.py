@@ -1,5 +1,7 @@
 # clean up verbose filenames - replace with simple ones with only pertinent info
 
+# TODO: Remove debugging print statements
+
 """
 Instructions:
 
@@ -34,144 +36,183 @@ both our lives easier and in future if anything you or I could edit the code dow
 the road.
 """
 
+
 import os
 
 
-codes = ["TT", "KB", "FB", "GG"]
+state_abbreviations = [
+    "AL",
+    "AK",
+    "AZ",
+    "AR",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "FL",
+    "GA",
+    "HI",
+    "ID",
+    "IL",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MD",
+    "MA",
+    "MI",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NV",
+    "NH",
+    "NJ",
+    "NM",
+    "NY",
+    "NC",
+    "ND",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "TX",
+    "UT",
+    "VT",
+    "VA",
+    "WA",
+    "WV",
+    "WI",
+    "WY",
+]
 
+doc_types = ["EDI Confirmation", "EDI Return", "Return Payment"]
 
-class filename:
-    """filename object with attributes: identifier (4860802), sub_identifier ((1)),
-    type (EDI Confirmation, Return, Return Payment), date (202111),
-    state_code (NC_ST_SU),
-    """
-
-    state_abbreviations = [
-        "AL",
-        "AK",
-        "AZ",
-        "AR",
-        "CA",
-        "CO",
-        "CT",
-        "DE",
-        "FL",
-        "GA",
-        "HI",
-        "ID",
-        "IL",
-        "IN",
-        "IA",
-        "KS",
-        "KY",
-        "LA",
-        "ME",
-        "MD",
-        "MA",
-        "MI",
-        "MN",
-        "MS",
-        "MO",
-        "MT",
-        "NE",
-        "NV",
-        "NH",
-        "NJ",
-        "NM",
-        "NY",
-        "NC",
-        "ND",
-        "OH",
-        "OK",
-        "OR",
-        "PA",
-        "RI",
-        "SC",
-        "SD",
-        "TN",
-        "TX",
-        "UT",
-        "VT",
-        "VA",
-        "WA",
-        "WV",
-        "WI",
-        "WY",
-    ]
-
-
-    def __init__(self) -> None:
-        self.id = ''
-        self.subid = ''
-        self.type = ''
-        self.date = ''
-        self.state_code = ''
-        
-        
-    def get_new_name(self, ufile):
-        """change the name of ufile with specific criteria
-
-        Args:
-            ufile (str): name of file to rename
-        """
-        self.new_name = []
-
-        # remove .pdf, add back before return
-        self.ufile_noext = ufile.strip(".pdf")
-        # TODO: check for other delimiters
-        self.ufile_split = self.ufile_noext.split("~")
-
-        for item in self.ufile_split:
-            # check states
-            if item in filename.state_abbreviations:
-                self.new_name.append(item)
-            # check codes
-            if item in codes:
-                self.new_name.append(item)
-
-            # TODO: make sure this is specific enough for all file variations
-                # IT'S NOT, NEED SPECIFIC NUMBERS
-            # check if all digits (dates)
-            if item.isdigit():
-                self.new_name.append(item)
-
-            else:
-                continue
-
-        # join and add back .pdf
-        self.new_name = "_".join(self.new_name)
-        self.new_name = f"{self.new_name}.pdf"
-        return self.new_name
-
-
-    # TODO: make work with CLI or GUI
-    def get_dir(self):
-        """get directory to work on from user. Should use GUI."""
-        # temp value for now
-        return "C:\\Users\\jgeog\\Code\\PythonProjects\\filename_change\\test_dir"
-
+years = [str(x) for x in range(2020, 2100)]
 
 
 def main():
-    
-    udir = filename.get_dir()
+    # TODO: ensure sufficient error handling
 
-    # for each file in the directory
-    for ufile in os.listdir(udir):
-        # full path with original filename
-        src = f"{udir}\\{ufile}"
+    udir = get_dir()
 
-        # full path with new filename
-        new_name = filename.get_new_name(ufile)
-        dest = f"{udir}\\{new_name}"
+    print("=" * 30)
 
-        os.rename(src, dest)
+    try:
+        # for each file in the directory
+        for ufile in os.listdir(udir):
+            # original all have ~ which is removed for all renames
+            if "~" not in ufile:
+                print(f"File '{ufile}' already renamed\n{'='*30}")
+                continue
 
-        # TODO: remove after testing
-        print(f"original = {ufile}")
-        print(f"new_name = {new_name}")
-        print("=" * 15)
+            # full path with original filename
+            src = f"{udir}\\{ufile}"
 
+            # full path with new filename
+            new_name = change_name(ufile)
+            dest = f"{udir}\\{new_name}"
+
+            # apply the rename, handles FileExistsError recursively
+            actually_rename(src, dest)
+
+            print(f"original = {ufile}")
+            print(f"new_name = {new_name}")
+            print("=" * 30)
+
+    except FileNotFoundError:
+        # TODO: prompt user for another attempt - call main() again
+        return print("Specified directory not found")
+
+
+def actually_rename(src, dest, n=0):
+    """calls os.rename() and handles FileExistsError recursively
+
+    Args:
+        src (string): original file name (full path)
+        dest (string): new file name (full path)
+        n (int, optional): counter for end of duplicate names. Defaults to 0.
+    """
+    try:
+        if n > 0:
+            dest = dest.strip(".pdf")
+            dest = f"{dest} ({n}).pdf"
+            os.rename(src, dest)
+        else:
+            os.rename(src, dest)
+
+    except FileExistsError:
+        actually_rename(src, dest, n + 1)
+
+
+def change_name(ufile):
+    """change the name of ufile with specific criteria:
+    <state&code>_<doc_type>_<date>
+    strip everything else
+
+    Args:
+        ufile (str): name of file to rename
+    """
+
+    new_name = []
+
+    # remove .pdf, add back before return
+    ufile_noext = ufile.strip(".pdf")
+    # TODO: check for other delimiters
+    ufile_split = ufile_noext.split("~")
+
+    for item in ufile_split:
+        # check states (it will be first 2 char)
+        try:
+            if ("".join(item[:2])) in state_abbreviations:
+                state_code = item
+                # new_name.append(item)
+        except IndexError:
+            # not a state code, just pass
+            pass
+
+        # check if a dtype from doc_types is in the item
+        for dtype in doc_types:
+            if dtype in item:
+                # remove all numbers/symbols around it,
+                # only use doc_types entry, as requested
+                document_type = dtype
+                # new_name.append(dtype)
+
+        # TODO: make sure this is specific enough for all file variations
+        # check if all digits (may be a date)
+        if item.isdigit():
+            # check if first 4 digits are a valid year (range(2020, 2100))
+            try:
+                if ("".join(item[:4])) in years:
+                    document_date = item
+                    # new_name.append(item)
+            except IndexError:
+                pass
+
+    # add info to new_name in specified order
+    new_name.append(state_code)
+    new_name.append(document_type)
+    new_name.append(document_date)
+
+    # join and add back .pdf
+    new_name = "_".join(new_name)
+    new_name = f"{new_name}.pdf"
+    return new_name
+
+
+# TODO: make work with CLI or GUI. Remember try, except
+def get_dir():
+    """get directory to work on from user. Should use GUI."""
+    # temp value for now
+    return "C:\\Users\\jgeog\\Code\\PythonProjects\\filename_change\\test_dir copy"
 
 
 if __name__ == "__main__":
