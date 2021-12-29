@@ -1,6 +1,7 @@
 # clean up verbose filenames - replace with simple ones with only pertinent info
 
-# TODO: Remove debugging print statements
+# TODO: remove debugging print statements
+# TODO: pack into .exe file
 
 """
 Instructions:
@@ -105,6 +106,7 @@ doc_types = [
     "Confirmation",
 ]
 
+# create list of years from 2020 - 2099
 years = [str(x) for x in range(2020, 2100)]
 
 
@@ -124,11 +126,11 @@ def main():
                 continue
 
             # full path with original filename
-            src = f"{udir}\\{ufile}"
+            src = f"{udir}\\{ufile}"  # src = source (original file path)
 
             # full path with new filename
             new_name = change_name(ufile)
-            dest = f"{udir}\\{new_name}"
+            dest = f"{udir}\\{new_name}"  # dest = destination (altered file path)
 
             # apply the rename, handles FileExistsError recursively
             actually_rename(src, dest)
@@ -169,8 +171,11 @@ def change_name(ufile):
 
     Args:
         ufile (str): name of file to rename
+    Return:
+        new_name (str): new name for file
     """
 
+    # empty name list to be filled in with pertinent information
     new_name = []
 
     # remove .pdf, add back before return
@@ -179,11 +184,10 @@ def change_name(ufile):
     ufile_split = ufile_noext.split("~")
 
     for item in ufile_split:
-        # check states (it will be first 2 char)
+        # check states (state abbreviation will be first 2 characters of item)
         try:
             if ("".join(item[:2])) in state_abbreviations:
-                state_code = item
-                # new_name.append(item)
+                state_code = item  # save item to put in new_name
         except IndexError:
             # not a state code, just pass
             pass
@@ -193,18 +197,17 @@ def change_name(ufile):
             if dtype in item:
                 # remove all numbers/symbols around it,
                 # only use doc_types entry, as requested
-                document_type = dtype
-                # new_name.append(dtype)
+                document_type = dtype  # save document type to put in new_name
 
         # TODO: make sure this is specific enough for all file variations
         # check if all digits (may be a date)
         if item.isdigit():
-            # check if first 4 digits are a valid year (range(2020, 2100))
             try:
+                # check if first 4 digits are a valid year (range(2020, 2100))
                 if ("".join(item[:4])) in years:
-                    document_date = item
-                    # new_name.append(item)
+                    document_date = item  # save item to put in new_name
             except IndexError:
+                # not a number from 2020 - 2099 (inclusive) so pass
                 pass
 
     # add info to new_name in specified order
