@@ -91,9 +91,19 @@ state_abbreviations = [
     "WV",
     "WI",
     "WY",
+    "PR",
+    "GU",
+    "DC",
 ]
 
-doc_types = ["EDI Confirmation", "EDI Return", "Return Payment"]
+# TODO: Check last entries
+doc_types = [
+    "EDI Confirmation",
+    "EDI Return",
+    "Return Payment",
+    "Return",
+    "Confirmation",
+]
 
 years = [str(x) for x in range(2020, 2100)]
 
