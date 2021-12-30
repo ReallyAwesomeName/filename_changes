@@ -39,6 +39,7 @@ the road.
 
 
 import os
+from string import digits, punctuation
 
 
 state_abbreviations = [
@@ -97,7 +98,7 @@ state_abbreviations = [
     "DC",
 ]
 
-# TODO: Check last entries
+# TODO: check last entries
 doc_types = [
     "EDI Confirmation",
     "EDI Return",
@@ -152,12 +153,27 @@ def actually_rename(src, dest, n=0):
         dest (string): new file name (full path)
         n (int, optional): counter for end of duplicate names. Defaults to 0.
     """
+    # FIXME: for multiple dupicates will put '(1) (2)' etc 
+        # TODO: should be fixed, make sure it is
     try:
         if n > 0:
-            dest = dest.strip(".pdf")
-            dest = f"{dest} ({n}).pdf"
+            # check for file extension
+            if '.' in dest:
+                # find beginning of file extension, save it then cut from there to end
+                cut_point = dest.index('.')
+                extension = dest[cut_point:]
+                dest = dest[:cut_point].strip()
+            # check for duplicate tag
+            if '(' in dest:
+                # find beginning of dup tag, cut from there to end
+                cut_point = dest.index('(')
+                dest = dest[:cut_point].strip()
+            
+            # add dup tag and replace file extension then rename
+            dest = f"{dest} ({n}){extension}"
             os.rename(src, dest)
         else:
+            # first attempt to rename this file
             os.rename(src, dest)
 
     except FileExistsError:
@@ -177,17 +193,34 @@ def change_name(ufile):
 
     # empty name list to be filled in with pertinent information
     new_name = []
+    # special criteria for prepayments, may be changed in future
+    is_prepayment = False
 
-    # remove .pdf, add back before return
-    ufile_noext = ufile.strip(".pdf")
-    # TODO: check for other delimiters
+    # remove file extension, add back before return
+    # FIXME: don't use strip? index the period and cut end off
+    if '.' in ufile:
+        # keep extension to add later
+        cut_point = ufile.index('.')
+        extension = ufile[cut_point:]
+        # remove extension
+        ufile_noext = ufile[:cut_point]
+    # TODO: check for other delimiters TODO:
     ufile_split = ufile_noext.split("~")
 
     for item in ufile_split:
         # check states (state abbreviation will be first 2 characters of item)
         try:
-            if ("".join(item[:2])) in state_abbreviations:
-                state_code = item  # save item to put in new_name
+            if item[:2] in state_abbreviations:
+                # TODO: check with zack to ensure compliance TODO:
+                if (item[-1].isdigit()):
+                    # this indicates a prepayment - bool mark and keep number
+                    is_prepayment = True
+                    prepayment_num = item[-1]
+                    # only save state abbrev for prepayments, remove the rest
+                    state_code = item[:2]  # save item to put in new_name
+                else:
+                    # save full state code for NON-prepayments only
+                    state_code = item  # save item to put in new_name
         except IndexError:
             # not a state code, just pass
             pass
@@ -195,29 +228,38 @@ def change_name(ufile):
         # check if a dtype from doc_types is in the item
         for dtype in doc_types:
             if dtype in item:
-                # remove all numbers/symbols around it,
-                # only use doc_types entry, as requested
-                document_type = dtype  # save document type to put in new_name
+                # remove all digits and symbols around it,
+                # save item to put in new_name
+                document_type = item.strip(digits).strip(punctuation)
 
-        # TODO: make sure this is specific enough for all file variations
+        # TODO: make sure this is specific enough for all file variations TODO:
         # check if all digits (may be a date)
         if item.isdigit():
             try:
                 # check if first 4 digits are a valid year (range(2020, 2100))
-                if ("".join(item[:4])) in years:
+                if item[:4] in years:
                     document_date = item  # save item to put in new_name
             except IndexError:
                 # not a number from 2020 - 2099 (inclusive) so pass
                 pass
 
+
     # add info to new_name in specified order
+    # example if prepayment: 
+    # ND_Prepayment 1_EDI Return_202111
+    # example if not prepayment:
+    # ND_ST_SU_EDI Return_202111
+    # NOTE: state_code includes codes other than state abbrev for NON-prepayments
+    # NOTE: state_code is trimmed down to just the state abbrev ONLY for prepayments
     new_name.append(state_code)
+    if is_prepayment:  # prepayments need extra tag
+        new_name.append(f'Prepayment {prepayment_num}')
     new_name.append(document_type)
     new_name.append(document_date)
 
-    # join and add back .pdf
+    # join and add back file extension
     new_name = "_".join(new_name)
-    new_name = f"{new_name}.pdf"
+    new_name = f"{new_name}{extension}"
     return new_name
 
 
