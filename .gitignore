@@ -10,6 +10,8 @@ __pycache__/
 .vscode/
 scrap.py
 jupyter_scrap.ipynb
+make_test_files.py
+sample_filenames.txt
 
 # Distribution / packaging
 .Python
