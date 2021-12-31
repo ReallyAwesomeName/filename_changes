@@ -1,5 +1,6 @@
 # clean up verbose filenames - replace with simple ones with only pertinent info
 
+# TODO: prompt box
 # TODO: remove debugging print statements
 # TODO: pack into .exe file
 
@@ -40,6 +41,7 @@ the road.
 
 import os
 from string import digits, punctuation
+import tkinter as tk
 
 
 state_abbreviations = [
@@ -93,9 +95,13 @@ state_abbreviations = [
     "WV",
     "WI",
     "WY",
-    "PR",
-    "GU",
     "DC",
+    # Territories
+    "AS",
+    "GU",
+    "MP",
+    "PR",
+    "VI",
 ]
 
 # TODO: check last entries
@@ -111,10 +117,8 @@ doc_types = [
 years = [str(x) for x in range(2020, 2100)]
 
 
-def main():
+def main(udir):
     # TODO: ensure sufficient error handling
-
-    udir = get_dir()
 
     print("=" * 30)
 
@@ -153,22 +157,22 @@ def actually_rename(src, dest, n=0):
         dest (string): new file name (full path)
         n (int, optional): counter for end of duplicate names. Defaults to 0.
     """
-    # FIXME: for multiple dupicates will put '(1) (2)' etc 
-        # TODO: should be fixed, make sure it is
+    # FIXME: for multiple dupicates will put '(1) (2)' etc
+    # TODO: should be fixed, make sure it is
     try:
         if n > 0:
             # check for file extension
-            if '.' in dest:
+            if "." in dest:
                 # find beginning of file extension, save it then cut from there to end
-                cut_point = dest.index('.')
+                cut_point = dest.index(".")
                 extension = dest[cut_point:]
                 dest = dest[:cut_point].strip()
             # check for duplicate tag
-            if '(' in dest:
+            if "(" in dest:
                 # find beginning of dup tag, cut from there to end
-                cut_point = dest.index('(')
+                cut_point = dest.index("(")
                 dest = dest[:cut_point].strip()
-            
+
             # add dup tag and replace file extension then rename
             dest = f"{dest} ({n}){extension}"
             os.rename(src, dest)
@@ -197,10 +201,9 @@ def change_name(ufile):
     is_prepayment = False
 
     # remove file extension, add back before return
-    # FIXME: don't use strip? index the period and cut end off
-    if '.' in ufile:
+    if "." in ufile:
         # keep extension to add later
-        cut_point = ufile.index('.')
+        cut_point = ufile.index(".")
         extension = ufile[cut_point:]
         # remove extension
         ufile_noext = ufile[:cut_point]
@@ -212,7 +215,7 @@ def change_name(ufile):
         try:
             if item[:2] in state_abbreviations:
                 # TODO: check with zack to ensure compliance TODO:
-                if (item[-1].isdigit()):
+                if item[-1].isdigit():
                     # this indicates a prepayment - bool mark and keep number
                     is_prepayment = True
                     prepayment_num = item[-1]
@@ -243,9 +246,8 @@ def change_name(ufile):
                 # not a number from 2020 - 2099 (inclusive) so pass
                 pass
 
-
     # add info to new_name in specified order
-    # example if prepayment: 
+    # example if prepayment:
     # ND_Prepayment 1_EDI Return_202111
     # example if not prepayment:
     # ND_ST_SU_EDI Return_202111
@@ -253,7 +255,7 @@ def change_name(ufile):
     # NOTE: state_code is trimmed down to just the state abbrev ONLY for prepayments
     new_name.append(state_code)
     if is_prepayment:  # prepayments need extra tag
-        new_name.append(f'Prepayment {prepayment_num}')
+        new_name.append(f"Prepayment {prepayment_num}")
     new_name.append(document_type)
     new_name.append(document_date)
 
@@ -263,12 +265,62 @@ def change_name(ufile):
     return new_name
 
 
-# TODO: make work with CLI or GUI. Remember try, except
-def get_dir():
-    """get directory to work on from user. Should use GUI."""
-    # temp value for now
-    return "C:\\Users\\jgeog\\Code\\PythonProjects\\filename_change\\test_dir copy"
+class popup(tk.Frame):
+    """popup window to take directory information from user.
+    User is to input abosolute path to folder containing files to be renamed into
+    the text entry field, then press the "Rename Files" button.
+    This assings popup.udir which is passed to main()
+    """
+
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.master = master
+        self.pack()
+        # self["background"] = "#2b2b2b"
+        self.create_widgets()
+        self.udir = ""
+
+    def create_widgets(self):
+        tk.Label(
+            self,
+            text="Enter the directory with files to be renamed.\n"
+            "All contents in this directory should need renaming.",
+            font=("Arial", 12),
+            # foreground="white",
+            # background="#2b2b2b",
+        ).pack(side="top")
+
+        self.entry = tk.Entry(
+            self,
+            width=55,
+            font=("Arial", 12),
+            # foreground="white",
+            # background="#4d4d4d"
+        )
+        self.entry.pack(side="top", pady=5)
+
+        self.b_confirm = tk.Button(
+            self,
+            text="Rename Files",
+            command=self.get_udir,
+            font=("Arial", 12),
+            # foreground="white",
+            # background="#555555",
+        )
+        self.b_confirm.pack(side="top", pady=10)
+
+    def get_udir(self):
+        # C:\Users\jgeog\Code\PythonProjects\filename_change\test_dir
+        self.udir = self.entry.get()
+        self.quit()
 
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    root.title("Batch Rename Files")
+    root.geometry("520x120")
+    # root["background"] = "#2b2b2b"
+    popup_window = popup(master=root)
+    popup_window.mainloop()
+
+    main(popup_window.udir)
