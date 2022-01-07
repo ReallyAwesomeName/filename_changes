@@ -1,8 +1,7 @@
 # clean up verbose filenames - replace with simple ones with only pertinent info
 
-# TODO: prompt box
 # TODO: remove debugging print statements
-# TODO: pack into .exe file
+# TODO: add confirmation dialog printing success or errors
 
 """
 Instructions:
@@ -39,7 +38,7 @@ the road.
 """
 
 
-import os
+from os import listdir, rename
 from string import digits, punctuation
 import tkinter as tk
 
@@ -104,7 +103,8 @@ state_abbreviations = [
     "VI",
 ]
 
-# TODO: check last entries
+# TODO: make sure "Return", "Return Payment", "EDI Return" don't conflict
+# TODO: make sure "Confirmation" and "EDI Confirmation" don't conflict
 doc_types = [
     "EDI Confirmation",
     "EDI Return",
@@ -117,14 +117,22 @@ doc_types = [
 years = [str(x) for x in range(2020, 2100)]
 
 
-def main(udir):
+def main():
     # TODO: ensure sufficient error handling
+
+    root = tk.Tk()
+    # root["background"] = "#2b2b2b"
+    popup_window = UserEntry(master=root)
+    popup_window.mainloop()
+    
+    # assign user directory from popup_window entry
+    udir = popup_window.udir
 
     print("=" * 30)
 
     try:
         # for each file in the directory
-        for ufile in os.listdir(udir):
+        for ufile in listdir(udir):
             # original all have ~ which is removed for all renames
             if "~" not in ufile:
                 print(f"File '{ufile}' already renamed\n{'='*30}")
@@ -175,10 +183,10 @@ def actually_rename(src, dest, n=0):
 
             # add dup tag and replace file extension then rename
             dest = f"{dest} ({n}){extension}"
-            os.rename(src, dest)
+            rename(src, dest)
         else:
             # first attempt to rename this file
-            os.rename(src, dest)
+            rename(src, dest)
 
     except FileExistsError:
         actually_rename(src, dest, n + 1)
@@ -207,14 +215,13 @@ def change_name(ufile):
         extension = ufile[cut_point:]
         # remove extension
         ufile_noext = ufile[:cut_point]
-    # TODO: check for other delimiters TODO:
+
     ufile_split = ufile_noext.split("~")
 
     for item in ufile_split:
         # check states (state abbreviation will be first 2 characters of item)
         try:
             if item[:2] in state_abbreviations:
-                # TODO: check with zack to ensure compliance TODO:
                 if item[-1].isdigit():
                     # this indicates a prepayment - bool mark and keep number
                     is_prepayment = True
@@ -235,7 +242,6 @@ def change_name(ufile):
                 # save item to put in new_name
                 document_type = item.strip(digits).strip(punctuation)
 
-        # TODO: make sure this is specific enough for all file variations TODO:
         # check if all digits (may be a date)
         if item.isdigit():
             try:
@@ -265,11 +271,11 @@ def change_name(ufile):
     return new_name
 
 
-class popup(tk.Frame):
+class UserEntry(tk.Frame):
     """popup window to take directory information from user.
     User is to input abosolute path to folder containing files to be renamed into
     the text entry field, then press the "Rename Files" button.
-    This assings popup.udir which is passed to main()
+    This assings UserEntry.udir
     """
 
     def __init__(self, master=None):
@@ -278,6 +284,10 @@ class popup(tk.Frame):
         self.pack()
         # self["background"] = "#2b2b2b"
         self.create_widgets()
+        master.title("Batch Rename Files")
+        master.geometry("520x120")
+        master.bind("<Return>", lambda event: self.get_udir())
+        master.bind("<Escape>", lambda event: self.quit())
         self.udir = ""
 
     def create_widgets(self):
@@ -316,11 +326,5 @@ class popup(tk.Frame):
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Batch Rename Files")
-    root.geometry("520x120")
-    # root["background"] = "#2b2b2b"
-    popup_window = popup(master=root)
-    popup_window.mainloop()
-
-    main(popup_window.udir)
+    main()
+    
