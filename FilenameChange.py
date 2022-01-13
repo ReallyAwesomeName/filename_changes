@@ -1,32 +1,37 @@
 # clean up verbose filenames - replace with simple ones with only pertinent info
 
-# TODO: remove debugging print statements
-# TODO: add confirmation dialog printing success or errors
 
-
-from os import listdir, rename
+from os import listdir, rename, path
 from string import digits, punctuation
 import tkinter as tk
+from tkinter import messagebox
+from sys import exit
+import logging
+from logging.handlers import RotatingFileHandler
 
 
 
 def main():
     # TODO: ensure sufficient error handling
-    
-    # FIXME: attempts renames when given blank directory
-
     root = tk.Tk()
     popup_window = RenameFiles(master=root)
     popup_window.mainloop()
 
-    print("=" * 30)
+    # abort if no directory is given
+    try:
+        if len(popup_window.udir) == 0:
+            messagebox.showerror('Error', 'No directory entered.\nNo filenames changed.')
+            exit()
+    except TypeError:
+        messagebox.showerror('TypeError', 'issue with len(popup_window.udir)')
 
     try:
         # for each file in the directory
         for ufile in listdir(popup_window.udir):
             # original all have ~ which is removed for all renames
             if "~" not in ufile:
-                print(f"File '{ufile}' already renamed\n{'='*30}")
+                # add to list of unchanged filenames for output log
+                popup_window.unchanged.append(ufile)
                 continue
 
             # full path with original filename
@@ -35,17 +40,40 @@ def main():
             # full path with new filename
             new_name = popup_window.make_new_name(ufile)
             dest = f"{popup_window.udir}\\{new_name}"  # dest = destination (altered file path)
+            
 
             # apply the rename, handles FileExistsError recursively
             popup_window.actually_rename(src, dest)
+            
+        # logging
+        rfh = RotatingFileHandler(filename="filenames.log",
+                                mode='a',
+                                maxBytes=32_768,
+                                backupCount=2,
+                                )
+        
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s\n%(message)s\n',
+                            datefmt='%m/%d/%Y %H:%M:%S',
+                            handlers=[rfh],
+                            )
+        logger = logging.getLogger('FilenameChange')
+        logger.info(popup_window.print_results())
 
-            print(f"original = {ufile}")
-            print(f"new_name = {new_name}")
-            print("=" * 30)
+
+        msg = f"Log file can be found at:\n{path.dirname(path.abspath(__file__))}"
+        messagebox.showinfo("Results", msg)
+
 
     except FileNotFoundError:
-        # TODO: prompt user for another attempt - call main() again
-        return print("Specified directory not found")
+        # TODO: prompt user for another attempt
+        retry = messagebox.askretrycancel("Error", "Directory not found.\nDo you want to retry?")
+        if retry:
+            root.destroy()
+            main()
+        else:
+            exit()
+    
 
 
 class RenameFiles(tk.Frame):
@@ -61,10 +89,14 @@ class RenameFiles(tk.Frame):
         self.pack()
 
         self.create_widgets()
+        self.entry.focus()
         master.title("Batch Rename Files")
         master.geometry("520x120")
         master.bind("<Return>", lambda event: self.get_udir())
         master.bind("<Escape>", lambda event: self.quit())
+        self.unchanged = []
+        self.new_old = {}
+        self.result_msg = ""
         self.udir = self.get_udir()
         # create list of years from 2020 - 2099
         self.years = [str(x) for x in range(2020, 2100)]
@@ -89,12 +121,13 @@ class RenameFiles(tk.Frame):
         ]
 
     def create_widgets(self):
-        tk.Label(
+        self.prompt = tk.Label(
             self,
             text="Enter the directory with files to be renamed.\n"
             "All contents in this directory should need renaming.",
             font=("Arial", 12),
-        ).pack(side="top")
+        )
+        self.prompt.pack(side="top")
 
         self.entry = tk.Entry(
             self,
@@ -114,6 +147,20 @@ class RenameFiles(tk.Frame):
     def get_udir(self):
         self.udir = self.entry.get()
         self.quit()
+        
+    def print_results(self):
+        """setup log file contents
+
+        Returns:
+            str: log message
+        """
+        for k,v in self.new_old.items():
+            self.result_msg += f"Original name:\n{k}\nNew name:\n{v}\n\n"
+        
+        unchanged_list = '\n'.join(self.unchanged)
+        if len(unchanged_list) > 0:
+            self.result_msg += f"Filenames not changed:\n{unchanged_list}"
+        return self.result_msg
         
     def make_new_name(self, ufile):
         """make a new name for ufile with specific criteria:
@@ -177,7 +224,6 @@ class RenameFiles(tk.Frame):
                     # not a number from 2020 - 2099 (inclusive) so pass      
                     pass
             
-            # FIXME: keep lone numbers after state code if that num >= 2
             # check if lone digit, keep if >= 2
             if item.isdigit() and len(item) == 1:
                 if int(item) >= 2:
@@ -191,7 +237,6 @@ class RenameFiles(tk.Frame):
         # ND_ST_SU_EDI Return_202111
         # NOTE: state_code includes codes other than state abbrev for NON-prepayments
         # NOTE: state_code is trimmed down to just the state abbrev ONLY for prepayments
-        # FIXME: add lone number when num >= 2
         new_name.append(state_code)
         if is_prepayment:  # prepayments need extra tag
             new_name.append(f"Prepayment {prepayment_num}")
@@ -238,9 +283,17 @@ class RenameFiles(tk.Frame):
 
         except FileExistsError:
             self.actually_rename(src, dest, n + 1)
+        try:
+            original_name = src[len(self.udir)+1:]
+            final_name = dest[len(self.udir)+1:]
+        except IndexError:
+            messagebox.showerror('IndexError', 'Issue with original_name[] or '
+                                 'final_name[] before adding to new_old{}')
+            
+        # don't overwrite values
+        if original_name not in self.new_old.keys():
+            self.new_old[original_name] = final_name
         
-
-
 
 if __name__ == "__main__":
     main()

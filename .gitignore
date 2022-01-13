@@ -8,10 +8,14 @@ __pycache__/
 
 # VSCode
 .vscode/
-scrap.py
 jupyter_scrap.ipynb
+
+# Project specific
 make_test_files.py
 sample_filenames.txt
+scrap.py
+test_dir/
+README.txt
 
 # Distribution / packaging
 .Python
