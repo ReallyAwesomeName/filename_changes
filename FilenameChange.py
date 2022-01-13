@@ -24,7 +24,9 @@ def main():
             )
             exit()
     except TypeError:
-        messagebox.showerror("TypeError", "issue with len(popup_window.udir)")
+        # happens when running and click x without renaming anything
+        # messagebox.showerror("TypeError", "issue with len(popup_window.udir)")
+        exit()
 
     try:
         # for each file in the directory
