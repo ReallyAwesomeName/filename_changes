@@ -11,7 +11,6 @@ from logging.handlers import RotatingFileHandler
 
 
 def main():
-    # TODO: ensure sufficient error handling
     root = tk.Tk()
     popup_window = RenameFiles(master=root)
     popup_window.mainloop()
@@ -69,7 +68,7 @@ def main():
         messagebox.showinfo("Results", msg)
 
     except FileNotFoundError:
-        # TODO: prompt user for another attempt
+        # prompt user for another attempt
         retry = messagebox.askretrycancel(
             "Error", "Directory not found.\nDo you want to retry?"
         )
@@ -113,8 +112,7 @@ class RenameFiles(tk.Frame):
                                     # Territories
                                     "AS","GU","MP","PR","VI",
         ]
-        # TODO: make sure "Return", "Return Payment", "EDI Return" don't conflict
-        # TODO: make sure "Confirmation" and "EDI Confirmation" don't conflict
+        
         self.doc_types = [
             "EDI Confirmation",
             "EDI Return",
@@ -283,8 +281,10 @@ class RenameFiles(tk.Frame):
                 rename(src, dest)
 
         except FileExistsError:
+            # n + 1 for dup tag
             self.actually_rename(src, dest, n + 1)
         try:
+            # get original and final names for output log
             original_name = src[len(self.udir) + 1 :]
             final_name = dest[len(self.udir) + 1 :]
         except IndexError:
@@ -296,6 +296,7 @@ class RenameFiles(tk.Frame):
 
         # don't overwrite values
         if original_name not in self.new_old.keys():
+            # new_old dict for output log
             self.new_old[original_name] = final_name
 
 
