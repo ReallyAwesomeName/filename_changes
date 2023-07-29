@@ -1,4 +1,28 @@
+#
+# FilenameChange.py
+# Main driver code and GUI
 # clean up verbose filenames - replace with simple ones with only pertinent info
+#
+# Author: Jason Geoghegan | email: jgeog@pm.me
+# https://github.com/ReallyAwesomeName/filename_changes
+#
+# =========================================================================== #
+#     This program trims specific elements from filenames for brevity         #
+#     Copyright (C) 2022  Jason Geoghegan                                     #
+#                                                                             #
+#     This program is free software: you can redistribute it and/or modify    #
+#     it under the terms of the GNU General Public License as published by    #
+#     the Free Software Foundation, either version 3 of the License, or       #
+#     (at your option) any later version.                                     #
+#                                                                             #
+#     This program is distributed in the hope that it will be useful,         #
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+#     GNU General Public License for more details.                            #
+#                                                                             #
+#     You should have received a copy of the GNU General Public License       #
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
+# =========================================================================== #
 
 
 from os import listdir, rename, path
