@@ -17,7 +17,3 @@ All numbers besides dates are removed in either case, with the exception of prep
 ## How to use
 
 Run FilenameChange.py or FilenameChange.exe, whichever is applicable. It will open a popup box asking for a directory. Provide the full path to a folder containing files that need their names trimmed down. Click the Rename Files button and it will do just that, then close. A log entry will be made each time listing the original filenames, the new names they were given, and any filenames that were not changed.
-
-## Disclaimer
-
-This is made for a very specific use case and will not work for filenames that do not follow the pattern specified by the client. I do not take responsibility for lost data or otherwise unexpected behavior. Run at your own risk.
